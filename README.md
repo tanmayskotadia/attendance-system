@@ -4,7 +4,7 @@ A full-stack, monorepo-based smart attendance management system built with **Rea
 
 ---
 
-## ?? Architecture & Tech Stack
+## Architecture & Tech Stack
 
 This project is a monorepo using npm workspaces:
 
@@ -14,7 +14,7 @@ This project is a monorepo using npm workspaces:
 
 ---
 
-## ?? Local Development Setup Guide
+## Local Development Setup Guide
 
 If you are a new developer joining the project, follow these steps exactly to get your local environment running.
 
@@ -121,7 +121,7 @@ There are no hardcoded default admin credentials. To create your first admin use
 
 ---
 
-## ?? Production Deployment Guide
+## Production Deployment Guide
 
 This project is configured to be easily deployed to **Vercel** (Frontend) and **Render** (Backend), using a **Neon** PostgreSQL database.
 
@@ -152,7 +152,7 @@ Once deployed, the frontend will communicate with the live backend, which stores
 
 ---
 
-## ?? Face Recognition Note
+## Face Recognition Note
 
 The frontend uses `face-api.js` for facial recognition. 
 - The model weights are stored in `apps/web/public/models/`.
