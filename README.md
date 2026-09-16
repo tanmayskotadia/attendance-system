@@ -21,7 +21,7 @@ If you are a new developer joining the project, follow these steps exactly to ge
 ### 1. Prerequisites
 
 - **Node.js**: v18 or higher (LTS recommended)
-- **PostgreSQL**: A cloud database on **Neon** (https://neon.tech/)
+- **Docker**: For running a local PostgreSQL database (Recommended for local dev)
 - **Git**
 
 ### 2. Clone and Install Dependencies
@@ -36,28 +36,23 @@ npm install
 
 ### 3. Database & Environment Configuration
 
-The backend connects to your Neon PostgreSQL database.
+You can start a local PostgreSQL database instantly using Docker.
 
-1. Create a free PostgreSQL database on [Neon](https://neon.tech/).
-2. Copy your connection string from the Neon dashboard (it should look like `postgresql://<user>:<password>@ep-something.neon.tech/dbname?sslmode=require`).
-3. Navigate to the API folder:
+1. From the root directory, start the database:
+   ```bash
+   docker compose up -d
+   ```
+2. Navigate to the API folder and copy the example environment file:
    ```bash
    cd apps/api
-   ```
-4. Create an `.env` file:
-   ```bash
+   
    # Linux/macOS
-   touch .env
+   cp .env.example .env
    
    # Windows (PowerShell)
-   New-Item .env -ItemType File
+   Copy-Item .env.example .env
    ```
-5. Add your configuration to `.env`, using the Neon connection string:
-   ```env
-   PORT=3000
-   DATABASE_URL="your-neon-connection-string-here"
-   JWT_SECRET="your-super-secret-jwt-key"
-   ```
+   *(The `.env.example` is already pre-configured to connect to the Docker database).*
 
 ### 4. Initialize the Database (Prisma 8)
 
