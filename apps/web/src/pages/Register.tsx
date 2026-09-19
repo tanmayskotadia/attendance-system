@@ -1076,7 +1076,7 @@ function BulkImportStudents() {
         <div className="form-group">
           <label>Upload CSV File *</label>
           <p className="field-hint">
-            Upload a CSV containing Serial No, Regn No, Name, and Email.
+            Upload a CSV containing Serial No, Regn No, and Name. Email is optional.
           </p>
           <pre
             style={{
@@ -1089,7 +1089,7 @@ function BulkImportStudents() {
               color: "var(--text-muted)",
             }}
           >
-            Serial No, Regn No, Name, Email
+            Serial No, Regn No, Name, Email (optional)
           </pre>
           <div className="csv-upload-zone">
             <input
@@ -1140,7 +1140,7 @@ function BulkImportStudents() {
                     <th>Serial No</th>
                     <th>Regn No</th>
                     <th>Name</th>
-                    <th>Email</th>
+                    <th>Email (optional)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1151,7 +1151,7 @@ function BulkImportStudents() {
                         {row.registrationNumber}
                       </td>
                       <td>{row.name}</td>
-                      <td>{row.email}</td>
+                      <td style={{ color: row.email ? undefined : 'var(--text-muted)' }}>{row.email || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

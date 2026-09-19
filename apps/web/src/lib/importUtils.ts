@@ -80,11 +80,7 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
             );
             return;
           }
-          if (!emailRaw) {
-            errors.push(`Row ${rowNumber}: missing Email`);
-            return;
-          }
-          if (!emailRegex.test(emailRaw)) {
+          if (emailRaw && !emailRegex.test(emailRaw)) {
             errors.push(`Row ${rowNumber}: invalid Email format "${emailRaw}"`);
             return;
           }
@@ -94,7 +90,7 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
             registrationNumber: regNo,
             name,
             serialNumber,
-            email: emailRaw,
+            email: emailRaw || undefined,
           });
         });
 
