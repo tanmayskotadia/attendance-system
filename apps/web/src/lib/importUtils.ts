@@ -5,6 +5,7 @@ export interface ParsedStudentRow {
   registrationNumber: string;
   name: string;
   serialNumber: number;
+  email?: string;
 }
 
 export interface ParseStudentsCsvResult {
@@ -42,6 +43,8 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
         const errors: string[] = [];
         const rows: ParsedStudentRow[] = [];
 
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
         results.data.forEach((row, idx) => {
           const regNo = getField(
             row,
@@ -50,6 +53,7 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
             "Registration Number",
           );
           const name = getField(row, "Name");
+          const emailRaw = getField(row, "Email", "Email Address");
           const serialRaw = getField(
             row,
             "Serial No",
@@ -57,7 +61,7 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
             "Serial",
           );
 
-          if (!regNo && !name && !serialRaw) return;
+          if (!regNo && !name && !serialRaw && !emailRaw) return;
 
           const serialNumber = parseSerialNumber(serialRaw);
           const rowNumber = idx + 2;
@@ -76,12 +80,21 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
             );
             return;
           }
+          if (!emailRaw) {
+            errors.push(`Row ${rowNumber}: missing Email`);
+            return;
+          }
+          if (!emailRegex.test(emailRaw)) {
+            errors.push(`Row ${rowNumber}: invalid Email format "${emailRaw}"`);
+            return;
+          }
 
           rows.push({
             rowNumber,
             registrationNumber: regNo,
             name,
             serialNumber,
+            email: emailRaw,
           });
         });
 

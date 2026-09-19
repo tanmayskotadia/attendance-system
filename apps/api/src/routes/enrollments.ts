@@ -61,6 +61,7 @@ interface BulkStudentInput {
   registrationNumber: string;
   name: string;
   serialNumber: number;
+  email?: string;
 }
 
 // POST /api/enrollments/bulk  (Admin) — register and enroll many students in one course
@@ -74,11 +75,9 @@ router.post(
     };
 
     if (!courseId || !Array.isArray(students) || students.length === 0) {
-      res
-        .status(400)
-        .json({
-          error: "courseId and a non-empty students array are required",
-        });
+      res.status(400).json({
+        error: "courseId and a non-empty students array are required",
+      });
       return;
     }
 
@@ -188,10 +187,21 @@ router.post(
             student = await tx.orm.public.Student.create({
               registrationNumber: normalizedRegNo,
               name,
-              email: null,
+              email: input.email || null,
               photoUrl: null,
               isActive: true,
             });
+          } else {
+            const updates: any = {};
+            if (name && student.name !== name) updates.name = name;
+            if (input.email && student.email !== input.email)
+              updates.email = input.email;
+
+            if (Object.keys(updates).length > 0) {
+              student = await tx.orm.public.Student.where({
+                id: student.id,
+              }).update(updates);
+            }
           }
 
           const dupEnrollment = await tx.orm.public.Enrollment.where({
@@ -284,11 +294,9 @@ router.post(
           s.registrationNumber.toUpperCase() ===
             student.registrationNumber.toUpperCase()
         ) {
-          res
-            .status(409)
-            .json({
-              error: `Registration number "${student.registrationNumber}" is already enrolled in this course`,
-            });
+          res.status(409).json({
+            error: `Registration number "${student.registrationNumber}" is already enrolled in this course`,
+          });
           return;
         }
       }
@@ -310,11 +318,9 @@ router.post(
           (e) => e.serialNumber === parsed,
         );
         if (serialTaken) {
-          res
-            .status(409)
-            .json({
-              error: `Serial number #${parsed} is already assigned in this course`,
-            });
+          res.status(409).json({
+            error: `Serial number #${parsed} is already assigned in this course`,
+          });
           return;
         }
         serialNumber = parsed;
