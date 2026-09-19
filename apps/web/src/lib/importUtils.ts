@@ -1,4 +1,4 @@
-import Papa from 'papaparse';
+import Papa from "papaparse";
 
 export interface ParsedStudentRow {
   rowNumber: number;
@@ -13,7 +13,7 @@ export interface ParseStudentsCsvResult {
 }
 
 function normalizeHeader(header: string): string {
-  return header.trim().toLowerCase().replace(/\s+/g, ' ');
+  return header.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function getField(row: Record<string, string>, ...keys: string[]): string {
@@ -23,13 +23,13 @@ function getField(row: Record<string, string>, ...keys: string[]): string {
     );
     if (match?.[1]?.trim()) return match[1].trim();
   }
-  return '';
+  return "";
 }
 
 export function parseSerialNumber(raw: string): number | null {
   const value = raw.trim();
-  if (!value || value.toUpperCase() === 'N/A') return null;
-  const parsed = parseInt(value.replace(/^#/, ''), 10);
+  if (!value || value.toUpperCase() === "N/A") return null;
+  const parsed = parseInt(value.replace(/^#/, ""), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
@@ -43,17 +43,27 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
         const rows: ParsedStudentRow[] = [];
 
         results.data.forEach((row, idx) => {
-          const regNo = getField(row, 'Reg No', 'Registration Number', 'RegNo');
-          const name = getField(row, 'Name');
-          const serialRaw = getField(row, 'Serial Number', 'Serial');
+          const regNo = getField(
+            row,
+            "Regn No",
+            "Reg No",
+            "Registration Number",
+          );
+          const name = getField(row, "Name");
+          const serialRaw = getField(
+            row,
+            "Serial No",
+            "Serial Number",
+            "Serial",
+          );
 
-          if (!regNo && !name) return;
+          if (!regNo && !name && !serialRaw) return;
 
           const serialNumber = parseSerialNumber(serialRaw);
           const rowNumber = idx + 2;
 
           if (!regNo) {
-            errors.push(`Row ${rowNumber}: missing Reg No`);
+            errors.push(`Row ${rowNumber}: missing Regn No`);
             return;
           }
           if (!name) {
@@ -62,7 +72,7 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
           }
           if (serialNumber === null) {
             errors.push(
-              `Row ${rowNumber}: invalid Serial Number "${serialRaw || '(empty)'}"`,
+              `Row ${rowNumber}: invalid Serial No "${serialRaw || "(empty)"}"`,
             );
             return;
           }
@@ -91,12 +101,12 @@ export function parseStudentsCsv(file: File): Promise<ParseStudentsCsvResult> {
         }
 
         if (rows.length === 0 && errors.length === 0) {
-          errors.push('No student rows found in the CSV file.');
+          errors.push("No student rows found in the CSV file.");
         }
 
         resolve({ rows, errors });
       },
-      error: (err) => reject(new Error(err.message || 'Failed to parse CSV')),
+      error: (err) => reject(new Error(err.message || "Failed to parse CSV")),
     });
   });
 }

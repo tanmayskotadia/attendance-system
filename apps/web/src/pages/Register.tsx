@@ -48,11 +48,7 @@ interface Student {
 }
 
 type Tab =
-  | "course"
-  | "student"
-  | "bulk-import"
-  | "manage-courses"
-  | "manage-students";
+  "course" | "student" | "bulk-import" | "manage-courses" | "manage-students";
 
 export function Register() {
   const [activeTab, setActiveTab] = useState<Tab>("course");
@@ -413,15 +409,18 @@ function RegisterStudent() {
     await ensureModels();
 
     const captured: number[][] = [];
-    
+
     // Try to capture up to 5 embeddings
     for (let i = 0; i < 15; i++) {
       if (captured.length >= 5) break;
-      const det = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+      const det = await faceapi
+        .detectSingleFace(video)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
       if (det && det.detection.score > 0.85) {
         captured.push(Array.from(det.descriptor));
       }
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 200));
     }
 
     if (captured.length > 0) {
@@ -476,7 +475,10 @@ function RegisterStudent() {
     if (!enrollInCourse || !selectedCourseId) return;
     fetchApi(`/enrollments?courseId=${selectedCourseId}`)
       .then((enrollments: { serialNumber: number }[]) => {
-        const maxSerial = enrollments.reduce((max, e) => Math.max(max, e.serialNumber ?? 0), 0);
+        const maxSerial = enrollments.reduce(
+          (max, e) => Math.max(max, e.serialNumber ?? 0),
+          0,
+        );
         setSerialNumber(String(maxSerial + 1));
       })
       .catch(console.error);
@@ -527,7 +529,10 @@ function RegisterStudent() {
       if (enrollInCourse && selectedCourseId) {
         const parsedSerial = parseInt(serialNumber, 10);
         if (!Number.isInteger(parsedSerial) || parsedSerial < 1) {
-          setMessage({ type: "error", text: "Serial number must be a positive whole number." });
+          setMessage({
+            type: "error",
+            text: "Serial number must be a positive whole number.",
+          });
           setIsSubmitting(false);
           return;
         }
@@ -786,7 +791,8 @@ function RegisterStudent() {
                           onClick={snapPhoto}
                           disabled={!cameraActive || isCapturing}
                         >
-                          <Camera size={16} /> {isCapturing ? "Capturing..." : "Snap Photo"}
+                          <Camera size={16} />{" "}
+                          {isCapturing ? "Capturing..." : "Snap Photo"}
                         </button>
                         <button
                           type="button"
@@ -854,7 +860,8 @@ function RegisterStudent() {
                       required
                     />
                     <p className="field-hint">
-                      This # is unique in the course and appears in attendance grid cells and CSV export.
+                      This # is unique in the course and appears in attendance
+                      grid cells and CSV export.
                     </p>
                   </div>
                 </>
@@ -898,7 +905,9 @@ function BulkImportStudents() {
   const [fileName, setFileName] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
+  const [importResult, setImportResult] = useState<BulkImportResult | null>(
+    null,
+  );
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -980,11 +989,17 @@ function BulkImportStudents() {
         setParsedRows([]);
         setFileName("");
         setParseErrors([]);
+
+        // Refresh courses to update any counts
+        fetchApi("/courses")
+          .then((data) => setCourses(data))
+          .catch(console.error);
       } else if (result.enrolled > 0) {
         setMessage({
           type: "success",
           text: `Imported ${result.enrolled} student${result.enrolled === 1 ? "" : "s"}. ${result.failed} failed, ${result.skipped} skipped.`,
         });
+        fetchApi("/courses").then(setCourses).catch(console.error);
       } else {
         setMessage({
           type: "error",
@@ -1016,7 +1031,7 @@ function BulkImportStudents() {
         <div>
           <h2>Bulk Import Students</h2>
           <p>
-            Select a course and upload a CSV with Reg No, Serial Number, and Name
+            Select a course and upload a CSV with Serial No, Regn No, and Name
             columns
           </p>
         </div>
@@ -1060,9 +1075,21 @@ function BulkImportStudents() {
         <div className="form-group">
           <label>Upload CSV File *</label>
           <p className="field-hint">
-            Use the same format as attendance export: Reg No, Serial Number (#1,
-            #2…), Name. Status, Method, and Time columns are ignored.
+            Upload a CSV containing Serial No, Regn No, and Name.
           </p>
+          <pre
+            style={{
+              fontSize: "0.8rem",
+              background: "var(--bg-card)",
+              padding: "0.5rem",
+              borderRadius: "4px",
+              border: "1px solid var(--border)",
+              marginBottom: "1rem",
+              color: "var(--text-muted)",
+            }}
+          >
+            Serial No,Regn No,Name
+          </pre>
           <div className="csv-upload-zone">
             <input
               id="bulk-csv-file"
@@ -1109,18 +1136,18 @@ function BulkImportStudents() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Reg No</th>
-                    <th>Serial Number</th>
+                    <th>Serial No</th>
+                    <th>Regn No</th>
                     <th>Name</th>
                   </tr>
                 </thead>
                 <tbody>
                   {parsedRows.map((row) => (
                     <tr key={`${row.registrationNumber}-${row.serialNumber}`}>
+                      <td>#{row.serialNumber}</td>
                       <td style={{ fontFamily: "monospace", fontWeight: 600 }}>
                         {row.registrationNumber}
                       </td>
-                      <td>#{row.serialNumber}</td>
                       <td>{row.name}</td>
                     </tr>
                   ))}
@@ -1130,20 +1157,22 @@ function BulkImportStudents() {
           </div>
         )}
 
-        {importResult && importResult.results.some((r) => r.status === "error") && (
-          <div className="import-results">
-            <strong>Import details:</strong>
-            <ul className="import-error-list">
-              {importResult.results
-                .filter((r) => r.status !== "enrolled")
-                .map((r) => (
-                  <li key={`${r.row}-${r.registrationNumber}`}>
-                    Row {r.row} ({r.registrationNumber}): {r.message || r.status}
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
+        {importResult &&
+          importResult.results.some((r) => r.status === "error") && (
+            <div className="import-results">
+              <strong>Import details:</strong>
+              <ul className="import-error-list">
+                {importResult.results
+                  .filter((r) => r.status !== "enrolled")
+                  .map((r) => (
+                    <li key={`${r.row}-${r.registrationNumber}`}>
+                      Row {r.row} ({r.registrationNumber}):{" "}
+                      {r.message || r.status}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
 
         <button
           type="button"
@@ -1326,13 +1355,20 @@ function ManageStudents() {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [photoStudent, setPhotoStudent] = useState<Student | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
-  const [photoMode, setPhotoMode] = useState<"none" | "upload" | "camera">("none");
+  const [photoMode, setPhotoMode] = useState<"none" | "upload" | "camera">(
+    "none",
+  );
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
-  const [photoMessage, setPhotoMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [photoMessage, setPhotoMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [faceEmbeddings, setFaceEmbeddings] = useState<number[][]>([]);
-  const [faceStatus, setFaceStatus] = useState<"idle" | "processing" | "found" | "not-found">("idle");
+  const [faceStatus, setFaceStatus] = useState<
+    "idle" | "processing" | "found" | "not-found"
+  >("idle");
   const photoVideoRef = useRef<HTMLVideoElement>(null);
   const photoCanvasRef = useRef<HTMLCanvasElement>(null);
   const photoStreamRef = useRef<MediaStream | null>(null);
@@ -1483,7 +1519,10 @@ function ManageStudents() {
       await loadStudents();
       setTimeout(() => closePhotoModal(), 1200);
     } catch (err: any) {
-      setPhotoMessage({ type: "error", text: err.message || "Failed to save photo" });
+      setPhotoMessage({
+        type: "error",
+        text: err.message || "Failed to save photo",
+      });
     } finally {
       setIsSavingPhoto(false);
     }
@@ -1621,18 +1660,37 @@ function ManageStudents() {
                       </div>
                     )}
                   </td>
-                  <td style={{ fontFamily: "monospace", fontSize: "0.85rem", fontWeight: 600 }}>
+                  <td
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                    }}
+                  >
                     {student.registrationNumber}
                   </td>
                   <td>
                     <div style={{ fontWeight: 500 }}>{student.name}</div>
-                    <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "2px" }}>
+                    <div
+                      style={{
+                        color: "var(--text-muted)",
+                        fontSize: "0.85rem",
+                        marginTop: "2px",
+                      }}
+                    >
                       {student.email || "—"}
                     </div>
                   </td>
                   <td>
-                    {student.enrolledCourses && student.enrolledCourses.length > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    {student.enrolledCourses &&
+                    student.enrolledCourses.length > 0 ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "4px",
+                        }}
+                      >
                         {student.enrolledCourses.map((c) => (
                           <span
                             key={c.id}
@@ -1646,7 +1704,7 @@ function ManageStudents() {
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              maxWidth: "200px"
+                              maxWidth: "200px",
                             }}
                             title={`${c.code} — ${c.name}`}
                           >
@@ -1655,11 +1713,24 @@ function ManageStudents() {
                         ))}
                       </div>
                     ) : (
-                      <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>None</span>
+                      <span
+                        style={{
+                          color: "var(--text-muted)",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        None
+                      </span>
                     )}
                   </td>
                   <td style={{ textAlign: "right" }}>
-                    <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.5rem",
+                        justifyContent: "flex-end",
+                      }}
+                    >
                       {!student.photoUrl && (
                         <button
                           className="icon-btn"
@@ -1672,7 +1743,9 @@ function ManageStudents() {
                       )}
                       <button
                         className="icon-btn"
-                        onClick={() => navigate(`/students/${student.id}/enroll`)}
+                        onClick={() =>
+                          navigate(`/students/${student.id}/enroll`)
+                        }
                         title="Enroll Face"
                         style={{ color: "var(--primary)" }}
                       >
@@ -1707,17 +1780,31 @@ function ManageStudents() {
       <Modal
         isOpen={isPhotoModalOpen}
         onClose={closePhotoModal}
-        title={photoStudent ? `Add Photo — ${photoStudent.name}` : "Add Student Photo"}
+        title={
+          photoStudent
+            ? `Add Photo — ${photoStudent.name}`
+            : "Add Student Photo"
+        }
       >
         {photoMessage && (
-          <div className={photoMessage.type === "success" ? "success-alert" : "error-alert"}>
+          <div
+            className={
+              photoMessage.type === "success" ? "success-alert" : "error-alert"
+            }
+          >
             {photoMessage.text}
           </div>
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {photoStudent && (
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+              }}
+            >
               {photoStudent.registrationNumber}
               {photoStudent.enrolledCourses?.length
                 ? ` · ${photoStudent.enrolledCourses.map((c) => c.code).join(", ")}`
@@ -1746,7 +1833,11 @@ function ManageStudents() {
 
           {photoUrl && (
             <div className="photo-preview-wrap">
-              <img src={photoUrl} alt="Student preview" className="photo-preview" />
+              <img
+                src={photoUrl}
+                alt="Student preview"
+                className="photo-preview"
+              />
               <button
                 type="button"
                 className="btn btn-sm btn-danger photo-clear-btn"
@@ -1762,17 +1853,31 @@ function ManageStudents() {
               </button>
               <div style={{ marginTop: "0.5rem" }}>
                 {faceStatus === "processing" && (
-                  <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  <span
+                    style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}
+                  >
                     Scanning for face...
                   </span>
                 )}
                 {faceStatus === "found" && (
-                  <span style={{ fontSize: "0.8rem", color: "#22c55e", fontWeight: 600 }}>
+                  <span
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#22c55e",
+                      fontWeight: 600,
+                    }}
+                  >
                     Face detected — will auto-enroll for attendance
                   </span>
                 )}
                 {faceStatus === "not-found" && (
-                  <span style={{ fontSize: "0.8rem", color: "#f59e0b", fontWeight: 600 }}>
+                  <span
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#f59e0b",
+                      fontWeight: 600,
+                    }}
+                  >
                     No face detected — manual face enrollment still available
                   </span>
                 )}
@@ -1791,7 +1896,10 @@ function ManageStudents() {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   if (file.size > 4 * 1024 * 1024) {
-                    setPhotoMessage({ type: "error", text: "Photo must be under 4 MB." });
+                    setPhotoMessage({
+                      type: "error",
+                      text: "Photo must be under 4 MB.",
+                    });
                     e.target.value = "";
                     return;
                   }
@@ -1851,8 +1959,19 @@ function ManageStudents() {
             </div>
           )}
 
-          <div className="modal-form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-            <button type="button" className="btn btn-secondary" onClick={closePhotoModal}>
+          <div
+            className="modal-form-actions"
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "0.75rem",
+            }}
+          >
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={closePhotoModal}
+            >
               Cancel
             </button>
             <button
@@ -1902,7 +2021,15 @@ function ManageStudents() {
             />
           </div>
 
-          <div className="modal-form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1rem" }}>
+          <div
+            className="modal-form-actions"
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "0.75rem",
+              marginTop: "1rem",
+            }}
+          >
             <button
               type="button"
               className="btn btn-secondary"
