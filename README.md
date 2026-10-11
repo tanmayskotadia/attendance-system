@@ -235,4 +235,4 @@ After deploying, create an admin user using the production URL (same curl comman
 
 **`npx prisma db update` fails**
 - Make sure you are inside `apps/api`, not the root.
-- Confirm the Docker container is running and PostgreSQL version is 15+.
+- Confirm the Docker container is running and PostgreSQL version is 15+
